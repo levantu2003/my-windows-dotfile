@@ -1,2 +1,2 @@
-# NEOVIM AND WINDOWS TERMINAL CUSTOMIZATION
+# Neovim and Windows Terminal Customization
 To be continue...😎
