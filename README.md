@@ -1,0 +1,2 @@
+# NEOVIM AND WINDOWS TERMINAL CUSTOMIZATION
+To be continue...😎
