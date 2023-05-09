@@ -1,2 +1,2 @@
-# Neovim and Windows Terminal Customization
-To be continue...😎
+# Windows Customization
+Including YTB Music, BetterDiscord, Neovim, PowerShell
