@@ -1,24 +1,20 @@
-require('base')
-require('maps')
-require('plugins')
-require('p-mason')
-require('p-lsp')
-require('p-presence')
-require('p-tree')
-require('color')
-require('text')
-require('p-lualine')
-require('p-telescope')
-require('p-bookmark')
-require('p-lspkind')
-require('p-cmp')
-require('p-null')
-require('p-snip')
-require('p-treesitter')
-require('style')
-require('other')
-require('p-colorizer')
-require('p-ufo')
-require('p-blankline')
-require('p-todo')
-require('p-notify')
+vim.g.mapleader = " "
+
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup("plugins") -- Plugins path in lua folder
+require("options") -- requirie options.lua in lua folder
+require("mappings") -- require mappings.lua in lua folder
+
+vim.cmd.colorscheme "catppuccin" -- theme
