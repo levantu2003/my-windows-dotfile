@@ -42,4 +42,4 @@ opt.splitbelow = true -- split horizontal window to the bottom
 opt.iskeyword:append("-") -- consider string-string as whole word
 
 -- Font
-opt.guifont			= "JetBrainsMono Font:h14"
+opt.guifont			= "Fantasque Sans Mono Font:h14"

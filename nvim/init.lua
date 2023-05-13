@@ -13,8 +13,8 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("lazy").setup("plugins") -- Plugins path in lua folder
 require("options") -- requirie options.lua in lua folder
+require("lazy").setup("plugins") -- Plugins path in lua folder
 require("mappings") -- require mappings.lua in lua folder
 
 vim.cmd.colorscheme "catppuccin" -- theme
