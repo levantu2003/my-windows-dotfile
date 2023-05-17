@@ -1,7 +1,7 @@
-return
-{
-    'norcalli/nvim-colorizer.lua', name = 'colorizer',
+return {
+    "norcalli/nvim-colorizer.lua",
+    name = "colorizer",
     config = function()
-        require 'colorizer'.setup()
-    end
+        require("colorizer").setup()
+    end,
 }

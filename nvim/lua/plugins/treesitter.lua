@@ -1,15 +1,15 @@
 return {
-    'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
     config = function()
-        require'nvim-treesitter.configs'.setup {
-            ensure_installed = {"c", "lua", "python", "c_sharp", "javascript", "html", "css"},
+        require("nvim-treesitter.configs").setup({
+            ensure_installed = { "c", "lua", "python", "c_sharp", "javascript", "html", "css" },
             sync_install = false,
             auto_install = true,
             ignore_install = {},
             highlight = {
                 enable = true,
-                disable = {"c", "rust"},
+                disable = { "c", "rust" },
                 disable = function(lang, buf)
                     local max_filesize = 100 * 1024 -- 100 KB
                     local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
@@ -17,8 +17,8 @@ return {
                         return true
                     end
                 end,
-                additional_vim_regex_highlighting = false
-            }
-        }
-    end
+                additional_vim_regex_highlighting = false,
+            },
+        })
+    end,
 }

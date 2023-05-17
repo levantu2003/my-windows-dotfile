@@ -1,10 +1,11 @@
-return
-{
-    'nvim-tree/nvim-tree.lua', name ='nvim-tree',
+return {
+    "nvim-tree/nvim-tree.lua",
+    name = "nvim-tree",
     dependencies = {
-        'nvim-tree/nvim-web-devicons', name = 'icons',
+        "nvim-tree/nvim-web-devicons",
+        name = "icons",
     },
     config = function()
-        require("nvim-tree").setup {}
-    end
+        require("nvim-tree").setup({})
+    end,
 }
