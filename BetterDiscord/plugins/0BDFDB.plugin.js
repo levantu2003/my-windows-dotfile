@@ -2,7 +2,7 @@
  * @name BDFDB
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 3.2.8
+ * @version 3.3.5
  * @description Required Library for DevilBro's Plugins
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -805,7 +805,7 @@ module.exports = (_ => {
 					}
 					else {
 						let wasEnabled = BDFDB.BDUtils.isPluginEnabled(pluginName);
-						let newName = (body.match(/"name"\s*:\s*"([^"]+)"/) || [])[1] || pluginName;
+						let newName = (body.match(/@name ([^"^\n^\t^\t]+)|['"]([^"^\n^\t^\t]+)['"]/i) || []).filter(n => n)[1] || pluginName;
 						let newVersion = (body.match(/@version ([0-9]+\.[0-9]+\.[0-9]+)|['"]([0-9]+\.[0-9]+\.[0-9]+)['"]/i) || []).filter(n => n)[1];
 						let oldVersion = PluginStores.updateData.plugins[url].version;
 						let fileName = pluginName == "BDFDB" ? "0BDFDB" : pluginName;
@@ -2454,7 +2454,7 @@ module.exports = (_ => {
 									if (!n || !n[1]) return;
 									let funcString = typeof n[1] == "function" ? n[1].toString() : (_ => {try {return JSON.stringify(n[1])}catch(err){return n[1].toString()}})();
 									let renderFuncString = typeof n[1].render == "function" && n[1].render.toString() || "";
-									return [dataStorage[item].map[item2]].flat(10).filter(s => s && typeof s == "string").every(string => funcString && funcString.indexOf(string) > -1 || renderFuncString && renderFuncString.indexOf(string) > -1);
+									return [dataStorage[item].map[item2]].flat(10).filter(s => s && typeof s == "string").every(string => funcString && funcString.replace(/[\n\t\r]/g, "").indexOf(string) > -1 || renderFuncString && renderFuncString.replace(/[\n\t\r]/g, "").indexOf(string) > -1);
 								});
 								if (foundFunc) {
 									dataStorage[item]._mappedItems[item2] = foundFunc[0];
@@ -3043,7 +3043,7 @@ module.exports = (_ => {
 					return Internal.LibraryModules.IconUtils.getGuildBannerURL(guild).split("?")[0];
 				};
 				BDFDB.GuildUtils.getFolder = function (id) {
-					return Internal.LibraryModules.SortedGuildUtils.guildFolders.filter(n => n.folderId).find(n => n.guildIds.includes(id));
+					return Internal.LibraryStores.SortedGuildStore.getGuildFolders().filter(n => n.folderId).find(n => n.guildIds.includes(id));
 				};
 				BDFDB.GuildUtils.openMenu = function (guild, e = mousePosition) {
 					if (!guild) return;
@@ -3078,7 +3078,7 @@ module.exports = (_ => {
 					return BDFDB.ReactUtils.findValue(div, "folderId", {up: true});
 				};
 				BDFDB.FolderUtils.getDefaultName = function (folderId) {
-					let folder = Internal.LibraryModules.SortedGuildUtils.getGuildFolderById(folderId);
+					let folder = Internal.LibraryStores.SortedGuildStore.getGuildFolderById(folderId);
 					if (!folder) return "";
 					let rest = 2 * Internal.DiscordConstants.MAX_GUILD_FOLDER_NAME_LENGTH;
 					let names = [], allNames = folder.guildIds.map(guildId => (Internal.LibraryStores.GuildStore.getGuild(guildId) || {}).name).filter(n => n);
@@ -3161,6 +3161,7 @@ module.exports = (_ => {
 				
 				BDFDB.ColorUtils = {};
 				BDFDB.ColorUtils.convert = function (color, conv, type) {
+					if (typeof color == "string" && color.indexOf("var(--") == 0) return color;
 					if (BDFDB.ObjectUtils.is(color)) {
 						let newColor = {};
 						for (let pos in color) newColor[pos] = BDFDB.ColorUtils.convert(color[pos], conv, type);
@@ -3373,6 +3374,7 @@ module.exports = (_ => {
 					};
 				};
 				BDFDB.ColorUtils.setAlpha = function (color, a, conv) {
+					if (typeof color == "string" && color.indexOf("var(--") == 0) return color;
 					if (BDFDB.ObjectUtils.is(color)) {
 						let newcolor = {};
 						for (let pos in color) newcolor[pos] = BDFDB.ColorUtils.setAlpha(color[pos], a, conv);
@@ -3405,6 +3407,7 @@ module.exports = (_ => {
 					return null;
 				};
 				BDFDB.ColorUtils.change = function (color, value, conv) {
+					if (typeof color == "string" && color.indexOf("var(--") == 0) return color;
 					value = parseFloat(value);
 					if (color != null && typeof value == "number" && !isNaN(value)) {
 						if (BDFDB.ObjectUtils.is(color)) {
@@ -3435,6 +3438,7 @@ module.exports = (_ => {
 					return null;
 				};
 				BDFDB.ColorUtils.invert = function (color, conv) {
+					if (typeof color == "string" && color.indexOf("var(--") == 0) return color;
 					if (BDFDB.ObjectUtils.is(color)) {
 						let newColor = {};
 						for (let pos in color) newColor[pos] = BDFDB.ColorUtils.invert(color[pos], conv);
@@ -3943,7 +3947,7 @@ module.exports = (_ => {
 					});
 				};
 				
-				var MappedMenuItems = {}, RealMenuItems = BDFDB.ModuleUtils.find(m => {
+				var MappedMenuItems = {}, RealMenuItems = BDFDB.ModuleUtils.findByProperties("MenuCheckboxItem", "MenuItem") || BDFDB.ModuleUtils.find(m => {
 					if (!m || typeof m != "function") return false;
 					let string = m.toString();
 					return string.endsWith("{return null}}") && string.indexOf("(){return null}") > -1 && string.indexOf("catch(") == -1;
@@ -4178,12 +4182,144 @@ module.exports = (_ => {
 				};
 				
 				BDFDB.DiscordUtils = {};
+				var getFileData = (...args) => {
+					var p = function (e, t, n, r, i, o, a) {
+						try {
+							var s = e[o](a),
+							u = s.value;
+						} catch (e) {
+							n(e);
+							return;
+						}
+						s.done ? t(u) : Promise.resolve(u).then(r, i);
+					};
+					var E = function (e) {
+						return function () {
+							var t = this,
+							n = arguments;
+							return new Promise((function (r, i) {
+								var o = e.apply(t, n);
+								function a(e) {
+									p(o, r, i, a, s, "next", e);
+								}
+								function s(e) {
+									p(o, r, i, a, s, "throw", e);
+								}
+								a(void 0);
+							}));
+						};
+					};
+					return E(function (e) {
+						const v = function (e, t) {		
+							var s = function (o) {
+								return function (s) {
+									return function (o) {
+										if (n) throw new TypeError("Generator is already executing.");
+										for (; a; ) try {
+											if (n = 1, r && (i = 2 & o[0] ? r.return : o[0] ? r.throw || ((i = r.return) && i.call(r), 0) : r.next) && !(i = i.call(r, o[1])).done) return i;
+											(r = 0, i) && (o = [2 & o[0], i.value]);
+											switch (o[0]) {
+												case 0:
+												case 1:
+													i = o;
+													break;
+												case 4:
+													a.label++;
+													return {
+														value: o[1],
+														done: !1
+													};
+												case 5:
+													a.label++;
+													r = o[1];
+													o = [0];
+													continue;
+												case 7:
+													o = a.ops.pop();
+													a.trys.pop();
+													continue;
+												default:
+													if (!(i = a.trys, i = i.length > 0 && i[i.length - 1]) && (6 === o[0] || 2 === o[0])) {
+														a = 0;
+														continue;
+													}
+													if (3 === o[0] && (!i || o[1] > i[0] && o[1] < i[3])) {
+														a.label = o[1];
+														break;
+													}
+													if (6 === o[0] && a.label < i[1]) {
+														a.label = i[1];
+														i = o;
+														break;
+													}
+													if (i && a.label < i[2]) {
+														a.label = i[2];
+														a.ops.push(o);
+														break;
+													}
+													i[2] && a.ops.pop();
+													a.trys.pop();
+													continue;
+											}
+											o = t.call(e, a);
+										} catch (e) {
+											o = [6, e];
+											r = 0;
+										} finally {
+											n = i = 0;
+										}
+										if (5 & o[0]) throw o[1];
+										return {
+											value: o[0] ? o[1] : void 0,
+											done: !0
+										}
+									}([o, s])
+								}
+							}
+							
+							var n, r, i, o;
+							var a = {
+								label: 0,
+								sent: function () {
+									if (1 & i[0])
+										throw i[1];
+									return i[1]
+								},
+								trys: [],
+								ops: []
+							};
+							return o = {
+								next: s(0),
+								throw : s(1),
+								return : s(2)
+							}, "function" == typeof Symbol && (o[Symbol.iterator] = function () {
+								return this
+							}), o;
+						};
+						return v(this, (function (r) {
+							var t, n;
+							switch (r.label) {
+							case 0:
+								return [4, fetch(new Request(e, {
+									method: "GET",
+									mode: "cors"
+								}))];
+							case 1:
+								t = r.sent();
+								return [4, t.arrayBuffer()];
+							case 2:
+								n = r.sent();
+								return [2, n]
+							}
+						}));
+					}).apply(this, args);
+				};
 				BDFDB.DiscordUtils.requestFileData = function (...args) {
 					let {url, uIndex} = args[0] && typeof args[0] == "string" ? {url: args[0], uIndex: 0} : (args[1] && typeof args[1] == "object" && typeof args[1].url == "string" ? {url: args[1], uIndex: 1} : {url: null, uIndex: -1});
 					if (!url || typeof url != "string") return;
 					let {callback, cIndex} = args[1] && typeof args[1] == "function" ? {callback: args[1], cIndex: 1} : (args[2] && typeof args[2] == "function" ? {callback: args[2], cIndex: 2} : {callback: null, cIndex: -1});
 					if (typeof callback != "function") return;
-					Internal.LibraryModules.FileRequestUtils.getFileData(url).then(buffer => callback(null, buffer)).catch(error => callback(error, null));
+					getFileData(url).then(buffer => callback(null, buffer)).catch(error => callback(error, null));
 				};
 				BDFDB.DiscordUtils.getSetting = function (category, key) {
 					if (!category || !key) return;
@@ -6840,7 +6976,7 @@ module.exports = (_ => {
 						return BDFDB.ReactUtils.createElement(Internal.LibraryComponents.Flex, {
 							className: this.props.className,
 							wrap: Internal.LibraryComponents.Flex.Wrap.WRAP,
-							children: [this.props.includeDMs && {name: BDFDB.LanguageUtils.LanguageStrings.DIRECT_MESSAGES, acronym: "DMs", id: Internal.DiscordConstants.ME, getIconURL: _ => {}}].concat(Internal.LibraryModules.SortedGuildUtils.getFlattenedGuilds()).filter(n => n).map(guild => BDFDB.ReactUtils.createElement(Internal.LibraryComponents.TooltipContainer, {
+							children: [this.props.includeDMs && {name: BDFDB.LanguageUtils.LanguageStrings.DIRECT_MESSAGES, acronym: "DMs", id: Internal.DiscordConstants.ME, getIconURL: _ => {}}].concat(Internal.LibraryStores.SortedGuildStore.getFlattenedGuildIds().map(Internal.LibraryStores.GuildStore.getGuild)).filter(n => n).map(guild => BDFDB.ReactUtils.createElement(Internal.LibraryComponents.TooltipContainer, {
 								text: guild.name,
 								children: BDFDB.ReactUtils.createElement("div", {
 									className: BDFDB.DOMUtils.formatClassName(this.props.guildClassName, BDFDB.disCN.settingsguild, this.props.disabled.includes(guild.id) && BDFDB.disCN.settingsguilddisabled),
@@ -8152,7 +8288,7 @@ module.exports = (_ => {
 					Internal._processAvatarMount(e.instance.props.user, e.node.querySelector(BDFDB.dotCN.avatarwrapper), e.node);
 				};
 				Internal.processMenu = function (e) {
-					if (!e.instance.props.children || BDFDB.ArrayUtils.is(e.instance.props.children) && !e.instance.props.children.length) Internal.LibraryModules.ContextMenuUtils.closeContextMenu();
+					if (e.instance.props && (!e.instance.props.children || BDFDB.ArrayUtils.is(e.instance.props.children) && !e.instance.props.children.length)) Internal.LibraryModules.ContextMenuUtils.closeContextMenu();
 				};
 				Internal.processMessageActionsContextMenu = function (e) {
 					e.instance.props.updatePosition = _ => {};

@@ -1,6 +1,7 @@
 {
+    "didShowIssueHelperPopup": true,
     "currentVersionInfo": {
-        "version": "2.0.18",
+        "version": "0.5.4",
         "hasShownChangelog": true
     }
 }

@@ -2,7 +2,7 @@
  * @name Timezones
  * @author TheCommieAxolotl#0001
  * @description Allows you to display other Users' local times.
- * @version 1.0.2
+ * @version 1.0.3
  * @authorId 538487970408300544
  * @invite 5BSWtSM3XU
  * @source https://github.com/TheCommieAxolotl/BetterDiscord-Stuff/tree/main/Timezones
@@ -21,7 +21,7 @@ module.exports = (() => {
                 },
             ],
             github_raw: "https://raw.githubusercontent.com/TheCommieAxolotl/BetterDiscord-Stuff/main/Timezones/Timezones.plugin.js",
-            version: "1.0.2",
+            version: "1.0.3",
             description: "Allows you to display other Users' local times.",
         },
         defaultConfig: [
@@ -134,7 +134,7 @@ module.exports = (() => {
                       async onStart() {
                           injectCSS("Timezones-Styles", Styles);
 
-                          const ProfileBanner = Webpack.getModule((m) => m.Z?.toString().includes("e.hasBannerImage") && m.Z?.toString().includes("e.hasThemeColors"));
+                          const ProfileBanner = Webpack.getModule((m) => m.Z?.toString().includes("e.hasBanner") && m.Z?.toString().includes("e.hasThemeColors"));
                           const MessageHeader = Webpack.getModule((m) => m.Z?.toString().includes("userOverride") && m.Z?.toString().includes("withMentionPrefix"));
                           const Tooltip = BdApi.Components.Tooltip;
 
@@ -299,13 +299,11 @@ module.exports = (() => {
 
                           if (time) {
                               date = new Date(time);
-                              date.setHours(date.getUTCHours() + Number(timezone[0]));
-                              date.setMinutes(date.getUTCMinutes() + Number(timezone[1]));
                           } else {
                               date = new Date();
-                              date.setHours(date.getUTCHours() + Number(timezone[0]));
-                              date.setMinutes(date.getUTCMinutes() + Number(timezone[1]));
                           }
+
+                          date.setTime(date.getTime() - date.getTimezoneOffset() * -60000 + timezone[0] * 3600000 + timezone[1] * 60000);
 
                           let ret = date.toLocaleString("en-US", {
                               weekday: "long",
@@ -314,7 +312,7 @@ module.exports = (() => {
                               day: "numeric",
                               hour: "numeric",
                               minute: "numeric",
-                              hour12: !this.settings.twentyFourHours,
+                              hourCycle: this.settings.twentyFourHours ? "h23" : "h12",
                           });
 
                           ret = ret.replace(/,(?=[^,]*$)/, "");

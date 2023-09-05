@@ -1,0 +1,13 @@
+{
+    "currentVersionInfo": {
+        "version": "2.2.1",
+        "hasShownChangelog": true
+    },
+    "settings": {
+        "sendDirectly": true,
+        "ignoreEmbedPermissions": true,
+        "shouldSendAnimatedStickers": true,
+        "shouldHighlightAnimated": true,
+        "stickerSize": 160
+    }
+}

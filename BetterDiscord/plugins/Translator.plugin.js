@@ -2,7 +2,7 @@
  * @name Translator
  * @author DevilBro
  * @authorId 278543574059057154
- * @version 2.5.5
+ * @version 2.5.8
  * @description Allows you to translate Messages and your outgoing Messages within Discord
  * @invite Jx3TjNS
  * @donate https://www.paypal.me/MircoWittrien
@@ -14,7 +14,9 @@
 
 module.exports = (_ => {
 	const changeLog = {
-		
+		"fixed": {
+			"Papago": "works again"
+		}
 	};
 	
 	return !window.BDFDB_Global || (!window.BDFDB_Global.loaded && !window.BDFDB_Global.started) ? class {
@@ -313,7 +315,7 @@ module.exports = (_ => {
 			},
 			papago: {
 				name: "Papago",
-				auto: false,
+				auto: true,
 				funcName: "papagoTranslate",
 				languages: ["en","es","fr","id","ja","ko","th","vi","zh-CN","zh-TW"],
 				key: "xxxxxxxxxxxxxxxxxxxx xxxxxxxxxx"
@@ -322,7 +324,7 @@ module.exports = (_ => {
 				name: "Baidu",
 				auto: true,
 				funcName: "baiduTranslate",
-				languages: ["ar","bg","cs","da","de","el","en","es","et","fi","fr","hu","it","jp","ko","nl","pl","pt","ro","ru","sl","sv","th","vi","zh","zh-CN","zh-TW"],
+				languages: ["ar","bg","cs","da","de","el","en","es","et","fi","fr","hu","it","ja","ko","nl","pl","pt","ro","ru","sl","sv","th","vi","zh","zh-CN","zh-TW"],
 				parser: {
 					"ar": "ara",
 					"bg": "bul",
@@ -331,6 +333,7 @@ module.exports = (_ => {
 					"et": "est",
 					"fi": "fin",
 					"fr": "fra",
+					"ja": "jp",
 					"ko": "kor",
 					"ro": "rom",
 					"sl": "slo",
@@ -554,15 +557,15 @@ module.exports = (_ => {
 						disabled: !translated && isTranslating,
 						action: _ => this.translateMessage(e.instance.props.message, e.instance.props.channel)
 					}));
-					this.injectSearchItem(e);
+					this.injectSearchItem(e, false);
 				}
 			}
 			
 			onTextAreaContextMenu (e) {
-				this.injectSearchItem(e);
+				this.injectSearchItem(e, true);
 			}
 			
-			injectSearchItem (e) {
+			injectSearchItem (e, ownMessage) {
 				let text = document.getSelection().toString();
 				if (text) {
 					let translating, foundTranslation, foundInput, foundOutput;
@@ -600,7 +603,7 @@ module.exports = (_ => {
 									}
 									else if (!translating) {
 										translating = true;
-										this.translateText(text, messageTypes.RECEIVED, (translation, input, output) => {
+										this.translateText(text, ownMessage ? messageTypes.SENT : messageTypes.RECEIVED, (translation, input, output) => {
 											if (translation) {
 												foundTranslation = translation, foundInput = input, foundOutput = output;
 												createTooltip();
@@ -1109,39 +1112,68 @@ module.exports = (_ => {
 			
 			papagoTranslate (data, callback) {
 				const credentials = (authKeys.papago && authKeys.papago.key || "kUNGxtAmTJQFbaFehdjk zC70k3VhpM").split(" ");
-				BDFDB.LibraryRequires.request("https://openapi.naver.com/v1/papago/n2mt", {
-					method: "post",
-					form: {
-						source: data.input.id,
-						target: data.output.id,
-						text: data.text
-					},
-					headers: {
-						"X-Naver-Client-Id": credentials[0],
-						"X-Naver-Client-Secret": credentials[1]
-					}
-				}, (error, response, body) => {
-					if (!error && body && response.statusCode == 200) {
-						try {
-							let message = (JSON.parse(body) || {}).message;
-							let result = message && (message.body || message.result);
-							if (result && result.translatedText) callback(result.translatedText);
-							else callback("");
+				const doTranslate = langCode => {
+					BDFDB.LibraryRequires.request("https://openapi.naver.com/v1/papago/n2mt", {
+						method: "post",
+						form: {
+							source: langCode,
+							target: data.output.id,
+							text: data.text
+						},
+						headers: {
+							"X-Naver-Client-Id": credentials[0],
+							"X-Naver-Client-Secret": credentials[1],
+							"Content-Type": "application/x-www-form-urlencoded"
 						}
-						catch (err) {callback("");}
-					}
-					else {
-						if (response.statusCode == 429) BDFDB.NotificationUtils.toast(`${this.labels.toast_translating_failed}. ${this.labels.toast_translating_tryanother}. ${this.labels.error_hourlylimit}`, {
-							type: "danger",
-							position: "center"
-						});
-						else BDFDB.NotificationUtils.toast(`${this.labels.toast_translating_failed}. ${this.labels.toast_translating_tryanother}. ${this.labels.error_serverdown}/${this.labels.error_keyoutdated}`, {
-							type: "danger",
-							position: "center"
-						});
-						callback("");
-					}
-				});
+					}, (error, response, body) => {
+						if (!error && body && response.statusCode == 200) {
+							try {
+								let message = (JSON.parse(body) || {}).message;
+								let result = message && (message.body || message.result);
+								if (result && result.translatedText) callback(result.translatedText);
+								else callback("");
+							}
+							catch (err) {callback("");}
+						}
+						else {
+							if (response.statusCode == 429) BDFDB.NotificationUtils.toast(`${this.labels.toast_translating_failed}. ${this.labels.toast_translating_tryanother}. ${this.labels.error_hourlylimit}`, {
+								type: "danger",
+								position: "center"
+							});
+							else BDFDB.NotificationUtils.toast(`${this.labels.toast_translating_failed}. ${this.labels.toast_translating_tryanother}. ${this.labels.error_serverdown}/${this.labels.error_keyoutdated}`, {
+								type: "danger",
+								position: "center"
+							});
+							callback("");
+						}
+					});
+				};
+				if (data.input.auto) {
+					BDFDB.LibraryRequires.request("https://openapi.naver.com/v1/papago/detectLangs", {
+						method: "post",
+						form: {
+							query: data.text,
+						},
+						headers: {
+							"X-Naver-Client-Id": credentials[0],
+							"X-Naver-Client-Secret": credentials[1],
+							"Content-Type": "application/x-www-form-urlencoded"
+						},
+					}, (error, response, body) => {
+						let langCode = "en";
+						if (!error && body && response.statusCode == 200) {
+							try {
+								langCode = JSON.parse(body)["langCode"];
+							} catch (err) {
+								langCode = "en";
+							}
+						}
+						data.input.name = languages[langCode].name;
+						data.input.ownlang = languages[langCode].ownlang;
+						doTranslate(langCode);
+					});
+				}
+				else doTranslate(data.input.id);
 			}
 			
 			baiduTranslate (data, callback) {

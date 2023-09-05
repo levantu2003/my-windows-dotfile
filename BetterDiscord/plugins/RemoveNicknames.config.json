@@ -3,6 +3,7 @@
 		"general": {
 			"replaceOwn": false,
 			"replaceBots": true,
+			"removeGlobal": true,
 			"addNickname": false,
 			"swapPositions": false
 		},
