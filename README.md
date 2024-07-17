@@ -1,2 +1,2 @@
 # Windows Customization
-Including YTB Music, BetterDiscord, Neovim, PowerShell
+Script install all my daily stuffs
