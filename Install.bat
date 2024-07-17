@@ -19,7 +19,7 @@ for %%i in (Powershell EVKey SAM) do (
 :: Cài đặt Scoop và các ứng dụng
 echo Cai dat Scoop va cac ung dung...
 powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
-powershell -Command "Invoke-WebRequest -URI $url -Proxy 'http://10.10.7.11:80' -ProxyCredential $creds"
+powershell -Command "Invoke-WebRequest -Uri $url -Proxy 'http://10.10.7.11:80' -ProxyCredential $creds"
 powershell -Command "Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression"
 powershell -Command "scoop install git"
 powershell -Command "scoop bucket add extras"
